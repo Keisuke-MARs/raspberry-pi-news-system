@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音声操作ニュース取得システム</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <h1>音声操作ニュース取得システム</h1>
+        <div id="clock" class="clock">日本時間を取得中...</div>
+        <div class="controls">
+            <button id="voice-input-btn" class="voice-input-btn">音声入力</button>
+            <div id="voice-input-status" class="status"></div>
+            <div id="recognition-result" class="result"></div>
+        </div>
+        <div class="news-section">
+            <h2>ニュース</h2>
+            <div id="news-status" class="status"></div>
+            <div id="news-container"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+
+</html>
