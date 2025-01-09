@@ -3,12 +3,44 @@ let mediaRecorder;
 let audioChunks = [];
 
 function updateClock() {
-    fetch('/api/time')
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('clock').textContent = `日本時間: ${data.time}`;
-        })
-        .catch(error => console.error('時計の更新エラー:', error));
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+
+    // アナログ時計の針を更新
+    updateClockHands(hours, minutes, seconds);
+
+    // デジタル時計の表示を更新
+    const digitalTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    document.getElementById('digital-time').textContent = `日本時間: ${digitalTime}`;
+}
+
+function updateClockHands(hours, minutes, seconds) {
+    const hourHand = document.getElementById('hour-hand');
+    const minuteHand = document.getElementById('minute-hand');
+    const secondHand = document.getElementById('second-hand');
+
+    const hourAngle = (hours % 12 + minutes / 60) * 30;
+    const minuteAngle = (minutes + seconds / 60) * 6;
+    const secondAngle = seconds * 6;
+
+    hourHand.setAttribute('transform', `rotate(${hourAngle}, 100, 100)`);
+    minuteHand.setAttribute('transform', `rotate(${minuteAngle}, 100, 100)`);
+    secondHand.setAttribute('transform', `rotate(${secondAngle}, 100, 100)`);
+}
+
+function showClockSection() {
+    document.getElementById('clock-section').classList.remove('hidden');
+    document.getElementById('news-section').classList.add('hidden');
+    // Clear status messages
+    document.getElementById('voice-input-status').textContent = '';
+    document.getElementById('recognition-result').textContent = '';
+}
+
+function showNewsSection() {
+    document.getElementById('clock-section').classList.add('hidden');
+    document.getElementById('news-section').classList.remove('hidden');
 }
 
 setInterval(updateClock, 1000);
@@ -118,6 +150,7 @@ async function sendAudioToServer() {
 
 async function fetchNews() {
     try {
+        showNewsSection();
         document.getElementById('news-status').textContent = 'ニュースを取得中...';
         const response = await fetch('/api/get-news');
         const data = await response.json();
@@ -131,11 +164,15 @@ async function fetchNews() {
 
         // 音声の再生
         if (data.audio) {
-            playAudio(data.audio);
+            await playAudio(data.audio);
+            // 音声再生後、時計表示に戻る
+            showClockSection();
         }
     } catch (error) {
         console.error('ニュース取得エラー:', error);
         document.getElementById('news-status').textContent = `ニュース取得エラー: ${error.message}`;
+        // エラー発生時も時計表示に戻る
+        showClockSection();
     }
 }
 
@@ -179,10 +216,18 @@ function displayNews(articles) {
     newsContainer.appendChild(newsList);
 }
 
-function playAudio(audioBase64) {
-    const audio = new Audio(`data:audio/mp3;base64,${audioBase64}`);
-    audio.play().catch(error => {
-        console.error('音声の再生に失敗しました:', error);
+async function playAudio(audioBase64) {
+    return new Promise((resolve, reject) => {
+        const audio = new Audio(`data:audio/mp3;base64,${audioBase64}`);
+        audio.onended = resolve;
+        audio.onerror = reject;
+        audio.play().catch(error => {
+            console.error('音声の再生に失敗しました:', error);
+            reject(error);
+        });
     });
 }
+
+// 初期表示は時計セクション
+showClockSection();
 
