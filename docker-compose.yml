@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  news-system:
+    build: .
+    ports:
+      - "5000:5000"
+    # volumes:
+    #   - .:/app
+    environment:
+      - FLASK_ENV=production
+      - NEWS_API_KEY=${NEWS_API_KEY}
+    devices:
+      - "/dev/snd:/dev/snd"
+    restart: unless-stopped

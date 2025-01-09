@@ -2,7 +2,7 @@ FROM python:3.9-slim-buster
 
 WORKDIR /app
 
-# システムパッケージのインストール（FFmpegを含む）
+# システムパッケージのインストール（FFmpegとMeCabを含む）
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
@@ -11,12 +11,16 @@ RUN apt-get update && \
     portaudio19-dev \
     python3-pyaudio \
     ffmpeg \
+    mecab \
+    libmecab-dev \
+    mecab-ipadic-utf8 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Pythonパッケージのインストール
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install nagisa
 
 # アプリケーションのコピー
 COPY . .

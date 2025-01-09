@@ -120,13 +120,11 @@ def speech_to_text():
         except Exception as e:
             logger.error(f"一時ファイルの削除中にエラー: {str(e)}")
 
-# 保存されたテキストを取得するエンドポイントを追加
 @bp.route('/api/get-text', methods=['GET'])
 def get_text():
     global Text_Data
     return jsonify({'text': Text_Data})
 
-# NewsAPIから朝日新聞の記事を取得し、音声データも生成するエンドポイントを追加
 @bp.route('/api/get-news', methods=['GET'])
 def get_news():
     global Text_Data
@@ -139,17 +137,13 @@ def get_news():
 
     url = 'https://newsapi.org/v2/everything'
     
-    # 1週間前の日付を取得
-    one_week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
-    
     params = {
-        'q': Text_Data,
+        'q': Text_Data or '日本',  # 検索ワードが空の場合は'日本'をデフォルトとする
         # 'language': 'ja',
-        # 'from': one_week_ago,
-        # 'sortBy': 'publishedAt',
+        # 'sortBy': 'publishedAt',  # 公開日時で並び替え
         'apiKey': api_key,
         'domains': 'asahi.com',  # 朝日新聞のドメインを指定
-        'pageSize': 100  # 取得する記事数を増やす
+        'pageSize': 3  # 最新の3件を取得
     }
 
     try:
