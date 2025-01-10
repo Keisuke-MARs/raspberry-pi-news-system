@@ -9,4 +9,5 @@ pytz==2021.1
 flask-cors==3.0.10
 pydub==0.25.1
 nagisa==0.2.8
+PyAudio==0.2.11
 

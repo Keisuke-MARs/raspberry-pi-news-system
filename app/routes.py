@@ -12,6 +12,7 @@ from config import Config
 from gtts import gTTS
 import io
 import base64
+from werkzeug.utils import secure_filename
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -36,14 +37,6 @@ def speech_to_text():
     global Text_Data
     logger.info("音声認識処理を開始")
 
-    # FFmpegの存在確認
-    ffmpeg_path = shutil.which('ffmpeg')
-    if not ffmpeg_path:
-        logger.error("FFmpegが見つかりません")
-        return jsonify({'error': 'FFmpegが見つかりません'}), 500
-
-    logger.info(f"FFmpegのパス: {ffmpeg_path}")
-
     if 'audio' not in request.files:
         logger.error("音声ファイルが見つかりません")
         return jsonify({'error': '音声ファイルが見つかりません'}), 400
@@ -53,36 +46,26 @@ def speech_to_text():
         logger.error("ファイル名が空です")
         return jsonify({'error': '無効な音声ファイルです'}), 400
 
-    webm_path = None
-    wav_path = None
+    filename = secure_filename(audio_file.filename)
+    file_path = os.path.join(tempfile.gettempdir(), filename)
+    audio_file.save(file_path)
 
     try:
-        # WebMファイルの保存
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.webm') as webm_temp:
-            webm_path = webm_temp.name
-            audio_file.save(webm_path)
-            logger.info(f"WebMファイルを保存: {webm_path}")
-
-        # WAVファイルへの変換
-        wav_path = webm_path.replace('.webm', '.wav')
-        logger.info(f"WAVファイルに変換開始: {wav_path}")
-
-        # FFmpegコマンドの実行
+        # WebMファイルをWAVに変換
+        wav_path = os.path.join(tempfile.gettempdir(), "converted.wav")
         command = [
             'ffmpeg',
-            '-y',
-            '-i', webm_path,
+            '-i', file_path,
             '-acodec', 'pcm_s16le',
             '-ar', '16000',
             '-ac', '1',
             wav_path
         ]
-
+        
         result = subprocess.run(command, capture_output=True, text=True)
-
         if result.returncode != 0:
             logger.error(f"FFmpeg変換エラー: {result.stderr}")
-            return jsonify({'error': '音声ファイルの変換に失敗しました'}), 500
+            return jsonify({'error': 'FFmpeg変換エラー'}), 500
 
         # 音声認識の実行
         recognizer = sr.Recognizer()
@@ -113,9 +96,9 @@ def speech_to_text():
     finally:
         # 一時ファイルの削除
         try:
-            if webm_path and os.path.exists(webm_path):
-                os.remove(webm_path)
-            if wav_path and os.path.exists(wav_path):
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            if os.path.exists(wav_path):
                 os.remove(wav_path)
         except Exception as e:
             logger.error(f"一時ファイルの削除中にエラー: {str(e)}")
@@ -140,10 +123,10 @@ def get_news():
     params = {
         'q': Text_Data or '日本',  # 検索ワードが空の場合は'日本'をデフォルトとする
         # 'language': 'ja',
-        # 'sortBy': 'publishedAt',  # 公開日時で並び替え
+        'sortBy': 'publishedAt',  # 公開日時で並び替え
         'apiKey': api_key,
         'domains': 'asahi.com',  # 朝日新聞のドメインを指定
-        'pageSize': 3  # 最新の3件を取得
+        'pageSize': 3  # 3件を取得
     }
 
     try:
@@ -154,7 +137,7 @@ def get_news():
         if news_data['status'] == 'ok':
             articles = news_data['articles']
             filtered_articles = filter_asahi_articles(articles)
-            formatted_articles = format_articles(filtered_articles[:3])  # 最新の3件のみを取得
+            formatted_articles = format_articles(filtered_articles)
             
             logger.info(f"{len(formatted_articles)}件の朝日新聞記事を取得しました")
 
