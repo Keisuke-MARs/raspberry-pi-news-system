@@ -151,7 +151,11 @@ async function sendAudioToServer() {
 async function fetchNews() {
     try {
         showNewsSection();
+        // ニュースコンテナをクリア
+        const newsContainer = document.getElementById('news-container');
+        newsContainer.innerHTML = '';
         document.getElementById('news-status').textContent = 'ニュースを取得中...';
+
         const response = await fetch('/api/get-news');
         const data = await response.json();
 
@@ -181,7 +185,7 @@ function displayNews(articles) {
     newsContainer.innerHTML = '';
 
     if (articles.length === 0) {
-        newsContainer.innerHTML = '<p>関連するニュースが見つかりませんでした。</p>';
+        newsContainer.innerHTML = '<p>ポジティブなニュースはありませんでした。</p>';
         return;
     }
 

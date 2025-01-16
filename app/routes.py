@@ -13,6 +13,7 @@ from gtts import gTTS
 import io
 import base64
 from werkzeug.utils import secure_filename
+import nagisa
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -108,6 +109,22 @@ def get_text():
     global Text_Data
     return jsonify({'text': Text_Data})
 
+def is_positive_news(title, description):
+    # ポジティブな単語のリスト
+    positive_words = ['成功', '進展', '改善', '回復', '成長', '発展', '好調', '前進', '達成', '解決']
+    
+    # タイトルと概要を結合してテキストを作成
+    text = title + ' ' + description
+    
+    # nagisaを使用してテキストを形態素解析
+    words = nagisa.tagging(text)
+    
+    # ポジティブな単語の出現回数をカウント
+    positive_count = sum(1 for word in words.words if word in positive_words)
+    
+    # ポジティブな単語が1つ以上含まれていればTrue、そうでなければFalse
+    return positive_count > 0
+
 @bp.route('/api/get-news', methods=['GET'])
 def get_news():
     global Text_Data
@@ -122,11 +139,10 @@ def get_news():
     
     params = {
         'q': Text_Data or '日本',  # 検索ワードが空の場合は'日本'をデフォルトとする
-        # 'language': 'ja',
         'sortBy': 'publishedAt',  # 公開日時で並び替え
         'apiKey': api_key,
         'domains': 'asahi.com',  # 朝日新聞のドメインを指定
-        'pageSize': 3  # 3件を取得
+        'pageSize': 100  # 20件を取得（フィルタリング前）
     }
 
     try:
@@ -137,9 +153,13 @@ def get_news():
         if news_data['status'] == 'ok':
             articles = news_data['articles']
             filtered_articles = filter_asahi_articles(articles)
-            formatted_articles = format_articles(filtered_articles)
+            positive_articles = [
+                article for article in filtered_articles
+                if is_positive_news(article['title'], article['description'])
+            ]
+            formatted_articles = format_articles(positive_articles[:3])  # 最大3件に制限
             
-            logger.info(f"{len(formatted_articles)}件の朝日新聞記事を取得しました")
+            logger.info(f"{len(formatted_articles)}件のポジティブな朝日新聞記事を取得しました")
 
             # 音声データの生成
             titles = [article['title'] for article in formatted_articles]
@@ -171,11 +191,13 @@ def format_articles(articles):
 
 def generate_audio(titles):
     try:
-        # 最大3つのタイトルを使用
-        titles = titles[:3]
-        
-        # タイトルを結合して1つの文章にする
-        text = "以下のニュースをお伝えします。" + "。次に、".join(titles) + "。以上です。"
+        if not titles:
+            text = "ポジティブなニュースはありませんでした。"
+        else:
+            # 最大3つのタイトルを使用
+            titles = titles[:3]
+            # タイトルを結合して1つの文章にする
+            text = "以下のポジティブなニュースをお伝えします。" + "。次に、".join(titles) + "。以上です。"
         
         # 音声ファイルを生成
         tts = gTTS(text=text, lang='ja')
