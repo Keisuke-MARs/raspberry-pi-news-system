@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, jsonify, request, send_file
+from flask import Blueprint, render_template, jsonify, request, send_file, Response, stream_with_context
 from datetime import datetime, timedelta
 import pytz
 import speech_recognition as sr
@@ -14,6 +14,16 @@ import io
 import base64
 from werkzeug.utils import secure_filename
 import nagisa
+import threading
+import time
+import random
+
+# Raspberry Pi環境でのみRPi.GPIOをインポート
+try:
+    import RPi.GPIO as GPIO
+except ImportError:
+    print("RPi.GPIO is not available. Running in development mode.")
+    GPIO = None
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -22,6 +32,27 @@ bp = Blueprint('main', __name__)
 
 # 認識したテキストを保存するグローバル変数
 Text_Data = ""
+
+# タッチセンサーが接続されているGPIOピン
+TOUCH_PIN = 17
+
+# タッチセンサーの状態を保持するグローバル変数
+touch_detected = False
+
+if GPIO:
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(TOUCH_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+
+def touch_callback(channel):
+    global touch_detected
+    touch_detected = True
+    logger.info("タッチセンサーが検出されました")
+
+if GPIO:
+    try:
+        GPIO.add_event_detect(TOUCH_PIN, GPIO.RISING, callback=touch_callback, bouncetime=300)
+    except RuntimeError as e:
+        logger.error(f"GPIOの設定中にエラーが発生しました: {str(e)}")
 
 @bp.route('/')
 def index():
@@ -32,6 +63,84 @@ def get_time():
     japan_tz = pytz.timezone('Asia/Tokyo')
     japan_time = datetime.now(japan_tz)
     return jsonify({'time': japan_time.strftime('%H:%M:%S')})
+
+@bp.route('/events')
+def sse():
+    def event_stream():
+        global touch_detected
+        while True:
+            if check_for_touch_event():
+                yield f"data: touch_detected\n\n"
+                touch_detected = False  # イベントを送信したらフラグをリセット
+            time.sleep(0.1)  # 100ミリ秒ごとにチェック
+
+    return Response(stream_with_context(event_stream()), content_type='text/event-stream')
+
+def check_for_touch_event():
+    global touch_detected
+    if GPIO:
+        return touch_detected
+    else:
+        # 開発環境では、ランダムにタッチイベントをシミュレート
+        return random.random() < 0.01  # 1%の確率でTrueを返す
+
+@bp.route('/api/touch-detected', methods=['POST'])
+def touch_detected_api():
+    global touch_detected
+    touch_detected = True
+    logger.info("タッチセンサーが検出されました (API経由)")
+    return jsonify({'message': 'タッチ検出確認'}), 200
+
+# 以下、既存の関数は変更なし
+
+def start_voice_input():
+    global Text_Data
+    logger.info("音声認識処理を開始")
+
+    try:
+        # 音声録音の処理（5秒間録音）
+        audio_file = "temp_audio.wav"
+        duration = 5  # 録音時間（秒）
+        sample_rate = 44100
+        channels = 1
+
+        command = [
+            'arecord',
+            '-d', str(duration),
+            '-f', 'S16_LE',
+            '-c', str(channels),
+            '-r', str(sample_rate),
+            audio_file
+        ]
+        
+        subprocess.run(command, check=True)
+
+        # 音声認識の実行
+        recognizer = sr.Recognizer()
+        with sr.AudioFile(audio_file) as source:
+            logger.info("音声データを読み込み中...")
+            audio_data = recognizer.record(source)
+            logger.info("音声認識を実行中...")
+            
+            text = recognizer.recognize_google(audio_data, language='ja-JP')
+            # 認識したテキストをグローバル変数に保存
+            Text_Data = text
+            logger.info(f"認識結果を保存: {Text_Data}")
+
+            return jsonify({'text': text, 'success': True})
+
+    except Exception as e:
+        logger.error(f"音声認識エラー: {str(e)}")
+        return jsonify({'error': str(e), 'success': False})
+    finally:
+        # 一時ファイルの削除
+        if os.path.exists(audio_file):
+            os.remove(audio_file)
+
+@bp.route('/api/start-voice-input', methods=['POST'])
+def api_start_voice_input():
+    logger.info("api_start_voice_input関数が呼び出されました")
+    return start_voice_input()
 
 @bp.route('/api/speech-to-text', methods=['POST'])
 def speech_to_text():
@@ -142,7 +251,7 @@ def get_news():
         'sortBy': 'publishedAt',  # 公開日時で並び替え
         'apiKey': api_key,
         'domains': 'asahi.com',  # 朝日新聞のドメインを指定
-        'pageSize': 100  # 20件を取得（フィルタリング前）
+        'pageSize': 20  # 20件を取得（フィルタリング前）
     }
 
     try:

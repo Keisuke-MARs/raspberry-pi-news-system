@@ -4,7 +4,7 @@ from config import Config
 
 def create_app():
     app = Flask(__name__, template_folder='templates')
-    CORS(app)
+    CORS(app, resources={r"/*": {"origins": "*"}})  # すべてのルートに対してCORSを有効化
     app.config.from_object(Config)
 
     from app import routes
