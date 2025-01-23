@@ -100,7 +100,7 @@ def start_voice_input():
     try:
         # 音声録音の処理（5秒間録音）
         audio_file = "temp_audio.wav"
-        duration = 5  # 録音時間（秒）
+        duration = 5  # 録音時間（秒）を5秒に変更
         sample_rate = 44100
         channels = 1
 
@@ -113,7 +113,9 @@ def start_voice_input():
             audio_file
         ]
         
+        logger.info("音声録音を開始します（5秒間）")
         subprocess.run(command, check=True)
+        logger.info("音声録音が完了しました")
 
         # 音声認識の実行
         recognizer = sr.Recognizer()

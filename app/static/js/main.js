@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
     eventSource.onmessage = (event) => {
         if (event.data === "touch_detected") {
             console.log("タッチ検出：音声入力を開始します")
+            voiceInputStatus.textContent = "タッチ検出：音声入力を開始します"
             startVoiceInput()
         }
     }
@@ -38,23 +39,44 @@ document.addEventListener("DOMContentLoaded", () => {
         voiceInputStatus.textContent = "音声入力を開始します..."
         recognitionResult.textContent = ""
 
-        fetch("/api/start-voice-input", { method: "POST" })
-            .then((response) => response.json())
-            .then((data) => {
-                if (data.success) {
-                    voiceInputStatus.textContent = "音声認識完了"
-                    recognitionResult.textContent = `認識結果: ${data.text}`
-                    fetchNews()
-                } else {
-                    voiceInputStatus.textContent = "音声認識エラー"
-                    recognitionResult.textContent = `エラー: ${data.error}`
-                }
-            })
-            .catch((error) => {
-                console.error("音声入力エラー:", error)
-                voiceInputStatus.textContent = "音声入力エラー"
-                recognitionResult.textContent = `エラー: ${error.message}`
-            })
+        // 音声入力ボタンを無効化
+        voiceInputBtn.disabled = true
+
+        // 5秒間のカウントダウンを表示
+        let countdown = 5
+        const countdownInterval = setInterval(() => {
+            voiceInputStatus.textContent = `音声を入力してください... (残り${countdown}秒)`
+            countdown--
+            if (countdown < 0) {
+                clearInterval(countdownInterval)
+                voiceInputStatus.textContent = "音声認識処理中..."
+            }
+        }, 1000)
+
+        // 5秒後に音声認識を開始
+        setTimeout(() => {
+            fetch("/api/start-voice-input", { method: "POST" })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.success) {
+                        voiceInputStatus.textContent = "音声認識完了"
+                        recognitionResult.textContent = `認識結果: ${data.text}`
+                        fetchNews()
+                    } else {
+                        voiceInputStatus.textContent = "音声認識エラー"
+                        recognitionResult.textContent = `エラー: ${data.error}`
+                    }
+                })
+                .catch((error) => {
+                    console.error("音声入力エラー:", error)
+                    voiceInputStatus.textContent = "音声入力エラー"
+                    recognitionResult.textContent = `エラー: ${error.message}`
+                })
+                .finally(() => {
+                    // 音声入力ボタンを再度有効化
+                    voiceInputBtn.disabled = false
+                })
+        }, 5000)
     }
 
     function fetchNews() {
