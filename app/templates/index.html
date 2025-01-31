@@ -1,35 +1,34 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>音声操作ニュース取得システム</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-
 <body>
     <div class="container">
         <h1>音声操作ニュース取得システム</h1>
         <div id="clock-section" class="section">
             <div id="clock" class="clock">
                 <svg width="200" height="200" viewBox="0 0 200 200">
-                    <circle cx="100" cy="100" r="95" fill="white" stroke="#007bff" stroke-width="4" />
-                    <line id="hour-hand" x1="100" y1="100" x2="100" y2="50" stroke="#333" stroke-width="6"
-                        stroke-linecap="round" />
-                    <line id="minute-hand" x1="100" y1="100" x2="100" y2="30" stroke="#333" stroke-width="4"
-                        stroke-linecap="round" />
-                    <line id="second-hand" x1="100" y1="100" x2="100" y2="20" stroke="#007bff" stroke-width="2"
-                        stroke-linecap="round" />
-                    <circle cx="100" cy="100" r="3" fill="#333" />
+                    <circle cx="100" cy="100" r="95" fill="white" stroke="#007bff" stroke-width="4"/>
+                    <line id="hour-hand" x1="100" y1="100" x2="100" y2="50" stroke="#333" stroke-width="6" stroke-linecap="round"/>
+                    <line id="minute-hand" x1="100" y1="100" x2="100" y2="30" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+                    <line id="second-hand" x1="100" y1="100" x2="100" y2="20" stroke="#007bff" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="100" cy="100" r="3" fill="#333"/>
                 </svg>
                 <div id="digital-time"></div>
             </div>
         </div>
         <div id="voice-input-section" class="section hidden">
-            <h2>音声入力中</h2>
+            <h2>音声入力</h2>
             <div id="voice-input-status" class="status"></div>
             <div id="recognition-result" class="result"></div>
+            <div id="recording-indicator" class="recording-indicator hidden">
+                <div class="recording-pulse"></div>
+                録音中
+            </div>
         </div>
         <div id="news-section" class="section hidden">
             <h2>ニュース</h2>
@@ -37,12 +36,11 @@
             <div id="news-container"></div>
         </div>
         <div class="controls">
-            <button id="voice-input-btn" class="voice-input-btn">音声入力controls">
-                <button id="voice-input-btn" class="voice-input-btn">音声入力</button>
+            <button id="voice-input-btn" class="voice-input-btn">音声入力開始</button>
         </div>
     </div>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
-
 </html>
+

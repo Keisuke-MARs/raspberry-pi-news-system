@@ -1,12 +1,11 @@
-from flask import Blueprint, render_template, jsonify, request, send_file, Response, stream_with_context
-from datetime import datetime, timedelta
+from flask import Blueprint, render_template, jsonify, request, Response, stream_with_context
+from datetime import datetime
 import pytz
 import speech_recognition as sr
 import tempfile
 import os
 import logging
 import subprocess
-import shutil
 import requests
 from config import Config
 from gtts import gTTS
@@ -14,9 +13,16 @@ import io
 import base64
 from werkzeug.utils import secure_filename
 import nagisa
-import threading
 import time
 import random
+import wave
+from pydub import AudioSegment
+import signal
+
+Text_Data = ""
+is_recording = False
+audio_file = None
+arecord_process = None
 
 # Raspberry Pi環境でのみRPi.GPIOをインポート
 try:
@@ -29,9 +35,6 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 bp = Blueprint('main', __name__)
-
-# 認識したテキストを保存するグローバル変数
-Text_Data = ""
 
 # タッチセンサーが接続されているGPIOピン
 TOUCH_PIN = 17
@@ -86,63 +89,107 @@ def check_for_touch_event():
 
 @bp.route('/api/touch-detected', methods=['POST'])
 def touch_detected_api():
-    global touch_detected
+    global touch_detected, is_recording
     touch_detected = True
-    logger.info("タッチセンサーが検出されました (API経由)")
-    return jsonify({'message': 'タッチ検出確認'}), 200
+    is_recording = not is_recording
+    status = "開始" if is_recording else "停止"
+    logger.info(f"タッチセンサーが検出されました (API経由) - 録音{status}")
+    return jsonify({'message': f'タッチ検出確認 - 録音{status}', 'is_recording': is_recording}), 200
 
-# 以下、既存の関数は変更なし
-
+@bp.route('/api/start-voice-input', methods=['POST'])
 def start_voice_input():
-    global Text_Data
+    global is_recording, audio_file, arecord_process
     logger.info("音声認識処理を開始")
 
     try:
-        # 音声録音の処理（5秒間録音）
-        audio_file = "temp_audio.wav"
-        duration = 5  # 録音時間（秒）を5秒に変更
+        # 一時ファイルの作成
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_audio:
+            audio_file = temp_audio.name
+            logger.info(f"一時音声ファイルを作成: {audio_file}")
+
         sample_rate = 44100
         channels = 1
 
         command = [
             'arecord',
-            '-d', str(duration),
             '-f', 'S16_LE',
             '-c', str(channels),
             '-r', str(sample_rate),
             audio_file
         ]
         
-        logger.info("音声録音を開始します（5秒間）")
-        subprocess.run(command, check=True)
+        logger.info("音声録音を開始します")
+        arecord_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        is_recording = True
+
+        return jsonify({'message': '音声録音を開始しました', 'success': True})
+
+    except Exception as e:
+        logger.error(f"音声録音エラー: {str(e)}")
+        return jsonify({'error': str(e), 'success': False}), 500
+
+@bp.route('/api/stop-voice-input', methods=['POST'])
+def stop_voice_input():
+    global is_recording, audio_file, Text_Data, arecord_process
+    logger.info("音声録音を停止します")
+
+    try:
+        is_recording = False
+        # arecordプロセスを終了
+        if arecord_process:
+            logger.info(f"arecordプロセス（PID: {arecord_process.pid}）を終了します")
+            os.kill(arecord_process.pid, signal.SIGTERM)
+            arecord_process.wait()
+            arecord_process = None
+
         logger.info("音声録音が完了しました")
+
+        # WAVファイルのヘッダーを確認
+        try:
+            with wave.open(audio_file, 'rb') as wav_file:
+                logger.info(f"WAVファイル情報: チャンネル数={wav_file.getnchannels()}, サンプル幅={wav_file.getsampwidth()}, フレームレート={wav_file.getframerate()}, フレーム数={wav_file.getnframes()}")
+        except wave.Error as e:
+            logger.error(f"WAVファイルの読み込みエラー: {str(e)}")
+            # WAVファイルが破損している場合、pydubを使用して修復を試みる
+            try:
+                audio = AudioSegment.from_file(audio_file, format="raw", frame_rate=44100, channels=1, sample_width=2)
+                audio.export(audio_file, format="wav")
+                logger.info("WAVファイルを修復しました")
+            except Exception as e:
+                logger.error(f"WAVファイルの修復に失敗しました: {str(e)}")
+                return jsonify({'error': 'WAVファイルの修復に失敗しました', 'details': str(e)}), 500
 
         # 音声認識の実行
         recognizer = sr.Recognizer()
-        with sr.AudioFile(audio_file) as source:
-            logger.info("音声データを読み込み中...")
-            audio_data = recognizer.record(source)
-            logger.info("音声認識を実行中...")
-            
-            text = recognizer.recognize_google(audio_data, language='ja-JP')
-            # 認識したテキストをグローバル変数に保存
-            Text_Data = text
-            logger.info(f"認識結果を保存: {Text_Data}")
+        try:
+            with sr.AudioFile(audio_file) as source:
+                logger.info("音声データを読み込み中...")
+                recognizer.dynamic_energy_threshold = True
+                recognizer.energy_threshold = 300  # 感度を調整（デフォルトは300）
+                audio_data = recognizer.record(source)
+                logger.info("音声認識を実行中...")
+                
+                text = recognizer.recognize_google(audio_data, language='ja-JP', show_all=False)
+                # 認識したテキストをグローバル変数に保存
+                Text_Data = text
+                logger.info(f"認識結果を保存: {Text_Data}")
 
-            return jsonify({'text': text, 'success': True})
+                return jsonify({'text': text, 'success': True})
+        except sr.UnknownValueError:
+            logger.error("音声を認識できませんでした")
+            return jsonify({'error': '音声を認識できませんでした', 'success': False}), 400
+        except sr.RequestError as e:
+            logger.error(f"音声認識サービスエラー: {str(e)}")
+            return jsonify({'error': '音声認識サービスに接続できませんでした', 'success': False}), 500
 
     except Exception as e:
         logger.error(f"音声認識エラー: {str(e)}")
-        return jsonify({'error': str(e), 'success': False})
+        return jsonify({'error': str(e), 'success': False}), 500
     finally:
         # 一時ファイルの削除
         if os.path.exists(audio_file):
             os.remove(audio_file)
-
-@bp.route('/api/start-voice-input', methods=['POST'])
-def api_start_voice_input():
-    logger.info("api_start_voice_input関数が呼び出されました")
-    return start_voice_input()
+            logger.info(f"一時音声ファイルを削除: {audio_file}")
 
 @bp.route('/api/speech-to-text', methods=['POST'])
 def speech_to_text():
@@ -177,31 +224,41 @@ def speech_to_text():
         result = subprocess.run(command, capture_output=True, text=True)
         if result.returncode != 0:
             logger.error(f"FFmpeg変換エラー: {result.stderr}")
-            return jsonify({'error': 'FFmpeg変換エラー'}), 500
+            return jsonify({'error': 'FFmpeg変換エラー', 'details': result.stderr}), 500
+
+        # 変換されたファイルの存在確認
+        if not os.path.exists(wav_path):
+            logger.error(f"変換後のWAVファイルが見つかりません: {wav_path}")
+            return jsonify({'error': '音声ファイルの変換に失敗しました'}), 500
 
         # 音声認識の実行
         recognizer = sr.Recognizer()
-        with sr.AudioFile(wav_path) as source:
-            logger.info("音声データを読み込み中...")
-            audio_data = recognizer.record(source)
-            logger.info("音声認識を実行中...")
-            
-            text = recognizer.recognize_google(audio_data, language='ja-JP')
-            # 認識したテキストをグローバル変数に保存
-            Text_Data = text
-            logger.info(f"認識結果を保存: {Text_Data}")
-            
-            return jsonify({
-                'text': text,
-                'stored': True  # テキストが保存されたことを示すフラグ
-            })
-
-    except sr.UnknownValueError as e:
-        logger.error(f"音声認識エラー: {str(e)}")
-        return jsonify({'error': '音声を認識できませんでした'}), 400
-    except sr.RequestError as e:
-        logger.error(f"音声認識サービスエラー: {str(e)}")
-        return jsonify({'error': '音声認識サービスに接続できませんでした'}), 500
+        try:
+            with sr.AudioFile(wav_path) as source:
+                logger.info("音声データを読み込み中...")
+                recognizer.dynamic_energy_threshold = True
+                recognizer.energy_threshold = 300  # 感度を調整（デフォルトは300）
+                audio_data = recognizer.record(source)
+                logger.info("音声認識を実行中...")
+                
+                text = recognizer.recognize_google(audio_data, language='ja-JP', show_all=False)
+                # 認識したテキストをグローバル変数に保存
+                Text_Data = text
+                logger.info(f"認識結果を保存: {Text_Data}")
+                
+                return jsonify({
+                    'text': text,
+                    'stored': True  # テキストが保存されたことを示すフラグ
+                })
+        except sr.UnknownValueError as e:
+            logger.error(f"音声認識エラー: {str(e)}")
+            return jsonify({'error': '音声を認識できませんでした'}), 400
+        except sr.RequestError as e:
+            logger.error(f"音声認識サービスエラー: {str(e)}")
+            return jsonify({'error': '音声認識サービスに接続できませんでした'}), 500
+        except Exception as e:
+            logger.error(f"予期せぬエラー: {str(e)}")
+            return jsonify({'error': f'予期せぬエラーが発生しました: {str(e)}'}), 500
     except Exception as e:
         logger.error(f"予期せぬエラー: {str(e)}")
         return jsonify({'error': f'予期せぬエラーが発生しました: {str(e)}'}), 500
@@ -220,21 +277,20 @@ def get_text():
     global Text_Data
     return jsonify({'text': Text_Data})
 
-def is_positive_news(title, description):
-    # ポジティブな単語のリスト
-    positive_words = ['成功', '進展', '改善', '回復', '成長', '発展', '好調', '前進', '達成', '解決']
-    
+def filter_positive_news(title, description):
     # タイトルと概要を結合してテキストを作成
     text = title + ' ' + description
     
     # nagisaを使用してテキストを形態素解析
     words = nagisa.tagging(text)
     
-    # ポジティブな単語の出現回数をカウント
-    positive_count = sum(1 for word in words.words if word in positive_words)
+    # ネガティブワードが含まれているかチェック
+    for word in words.words:
+        if word in Config.NEGATIVE_WORDS:
+            return False
     
-    # ポジティブな単語が1つ以上含まれていればTrue、そうでなければFalse
-    return positive_count > 0
+    # ネガティブワードが含まれていなければTrue
+    return True
 
 @bp.route('/api/get-news', methods=['GET'])
 def get_news():
@@ -266,7 +322,7 @@ def get_news():
             filtered_articles = filter_asahi_articles(articles)
             positive_articles = [
                 article for article in filtered_articles
-                if is_positive_news(article['title'], article['description'])
+                if filter_positive_news(article['title'], article['description'])
             ]
             formatted_articles = format_articles(positive_articles[:3])  # 最大3件に制限
             

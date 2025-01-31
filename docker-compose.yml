@@ -9,12 +9,20 @@ services:
       - NEWS_API_KEY=${NEWS_API_KEY}
     devices:
       - "/dev/snd:/dev/snd"
-      - "/dev/mem:/dev/mem"
-      - "/dev/gpiomem:/dev/gpiomem"
+    volumes:
+      - /dev/shm:/dev/shm
+      - "/run/user/1000/pulse:/run/user/1000/pulse"
+      - "/etc/asound.conf:/etc/asound.conf:ro"
+      - "/home/dereal/.config/pulse/cookie:/root/.config/pulse/cookie"
+      - "/tmp/audio:/tmp/audio"
+      - "/dev/snd:/dev/snd"
     privileged: true
+    group_add:
+      - audio
     restart: unless-stopped
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
+
