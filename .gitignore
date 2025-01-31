@@ -1,1 +1,46 @@
+# Python関連
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.swp
+*.swo
+
+# 環境設定ファイル
 .env
+*.ini
+*.cfg
+
+# 仮想環境関連
+venv/
+env/
+.virtualenv/
+
+# エディタ・IDE関連
+.vscode/
+.idea/
+*.iml
+
+# ログ・キャッシュ
+logs/
+*.log
+*.sqlite3
+instance/
+cache/
+*.bak
+
+# Docker関連
+docker-compose.override.yml
+.env.docker
+*.pid
+
+# Pythonパッケージ
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# OS固有ファイル
+.DS_Store
+Thumbs.db
