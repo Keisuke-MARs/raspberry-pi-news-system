@@ -10,7 +10,7 @@ app = create_app()
 if __name__ == '__main__':
     try:
         logger.info("Starting the application...")
-        app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
+        app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
     except Exception as e:
         logger.error(f"An error occurred while starting the application: {str(e)}")
         raise

@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  let eventSource = new EventSource("/events")
+  let eventSource
   const voiceInputBtn = document.getElementById("voice-input-btn")
   const clockSection = document.getElementById("clock-section")
   const voiceInputSection = document.getElementById("voice-input-section")
@@ -10,29 +10,29 @@ document.addEventListener("DOMContentLoaded", () => {
   let isRecording = false
   const audioPlaybackPromise = null
 
-  eventSource.onmessage = (event) => {
-    if (event.data === "touch_detected") {
-      console.log("タッチ検出：音声入力を開始/停止します")
-      toggleVoiceInput()
+  function initEventSource() {
+    if (eventSource) {
+      eventSource.close()
+    }
+    eventSource = new EventSource("/events")
+    eventSource.onmessage = (event) => {
+      if (event.data === "touch_detected") {
+        console.log("タッチ検出：音声入力を開始/停止します")
+        toggleVoiceInput()
+      }
+    }
+    eventSource.onerror = (error) => {
+      console.error("SSE エラー:", error)
+      eventSource.close()
+      setTimeout(() => {
+        console.log("SSE 再接続を試みます...")
+        initEventSource()
+      }, 5000)
     }
   }
 
-  eventSource.onerror = (error) => {
-    console.error("SSE エラー:", error)
-    // エラー時に再接続を試みる
-    setTimeout(() => {
-      console.log("SSE 再接続を試みます...")
-      eventSource.close()
-      initEventSource()
-    }, 5000)
-  }
-
-  function initEventSource() {
-    const newEventSource = new EventSource("/events")
-    newEventSource.onmessage = eventSource.onmessage
-    newEventSource.onerror = eventSource.onerror
-    eventSource = newEventSource
-  }
+  // 初期化時にSSE接続を開始
+  initEventSource()
 
   voiceInputBtn.addEventListener("click", toggleVoiceInput)
 
@@ -185,7 +185,20 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error("音声の再生に失敗しました:", error)
         reject(error)
       }
-      audio.play().catch(reject)
+      // 自動再生を試みる
+      audio.play().catch((error) => {
+        console.error("自動再生に失敗しました:", error)
+        // 自動再生に失敗した場合、ユーザーインタラクションを待つ
+        document.body.addEventListener(
+          "click",
+          function playHandler() {
+            audio.play().catch(reject)
+            document.body.removeEventListener("click", playHandler)
+          },
+          { once: true },
+        )
+        console.log("音声の再生準備完了。ユーザーの操作を待っています...")
+      })
     })
   }
 

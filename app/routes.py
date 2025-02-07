@@ -54,8 +54,10 @@ def touch_callback(channel):
 if GPIO:
     try:
         GPIO.add_event_detect(TOUCH_PIN, GPIO.RISING, callback=touch_callback, bouncetime=300)
+        logger.info("GPIOの設定が正常に完了しました")
     except RuntimeError as e:
         logger.error(f"GPIOの設定中にエラーが発生しました: {str(e)}")
+        logger.error("GPIO設定の詳細: PIN=%s, EDGE=RISING, CALLBACK=touch_callback, BOUNCETIME=300", TOUCH_PIN)
 
 @bp.route('/')
 def index():
@@ -73,10 +75,12 @@ def sse():
         global touch_detected
         while True:
             if check_for_touch_event():
+                logger.info("タッチイベントを検出しました。SSEイベントを送信します。")
                 yield f"data: touch_detected\n\n"
                 touch_detected = False  # イベントを送信したらフラグをリセット
             time.sleep(0.1)  # 100ミリ秒ごとにチェック
 
+    logger.info("SSE接続が確立されました")
     return Response(stream_with_context(event_stream()), content_type='text/event-stream')
 
 def check_for_touch_event():
@@ -309,7 +313,7 @@ def get_news():
         'sortBy': 'publishedAt',  # 公開日時で並び替え
         'apiKey': api_key,
         'domains': 'asahi.com',  # 朝日新聞のドメインを指定
-        'pageSize': 50  # 50件を取得（フィルタリング前）
+        'pageSize': 20  # 20件を取得（フィルタリング前）
     }
 
     try:
@@ -366,6 +370,8 @@ def generate_audio(titles):
             # タイトルを結合して1つの文章にする
             text = "以下のポジティブなニュースをお伝えします。" + "。次に、".join(titles) + "。以上です。"
         
+        logger.info(f"生成する音声テキスト: {text}")
+        
         # 音声ファイルを生成
         tts = gTTS(text=text, lang='ja')
         
@@ -377,6 +383,7 @@ def generate_audio(titles):
         # 音声データをBase64エンコード
         audio_base64 = base64.b64encode(audio_stream.getvalue()).decode('utf-8')
         
+        logger.info("音声データの生成が完了しました")
         return audio_base64
     
     except Exception as e:

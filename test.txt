@@ -1,0 +1,100 @@
+ sudo docker-compose logs -f
+Attaching to raspberry-pi-news-system_news-system_1
+news-system_1  | 2025-01-24 02:54:29,481 - app.routes - ERROR - GPIOの設定中にエラーが発生しました: Failed to add edge detection
+news-system_1  | 2025-01-24 02:54:29,497 - __main__ - INFO - Starting the application...
+news-system_1  |  * Serving Flask app 'app' (lazy loading)
+news-system_1  |  * Environment: production
+news-system_1  |    WARNING: This is a development server. Do not use it in a production deployment.
+news-system_1  |    Use a production WSGI server instead.
+news-system_1  |  * Debug mode: on
+news-system_1  | 2025-01-24 02:54:29,533 - werkzeug - WARNING -  * Running on all addresses.
+news-system_1  |    WARNING: This is a development server. Do not use it in a production deployment.
+news-system_1  | 2025-01-24 02:54:29,533 - werkzeug - INFO -  * Running on http://10.24.105.161:5000/ (Press CTRL+C to quit)
+news-system_1  | 2025-01-24 02:54:29,537 - werkzeug - INFO -  * Restarting with stat
+news-system_1  | 2025-01-24 02:54:35,201 - app.routes - ERROR - GPIOの設定中にエラーが発生しました: Failed to add edge detection
+news-system_1  | 2025-01-24 02:54:35,216 - __main__ - INFO - Starting the application...
+news-system_1  | 2025-01-24 02:54:35,232 - werkzeug - WARNING -  * Debugger is active!
+news-system_1  | 2025-01-24 02:54:35,253 - werkzeug - INFO -  * Debugger PIN: 564-582-729
+news-system_1  | 2025-01-24 02:55:08,229 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:55:08] "GET / HTTP/1.1" 200 -
+news-system_1  | 2025-01-24 02:55:08,388 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:55:08] "GET /static/css/style.css HTTP/1.1" 304 -
+news-system_1  | 2025-01-24 02:55:08,390 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:55:08] "GET /static/js/main.js HTTP/1.1" 304 -
+news-system_1  | 2025-01-24 02:55:08,595 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:55:08] "GET /favicon.ico HTTP/1.1" 404 -
+news-system_1  | 2025-01-24 02:55:25,395 - app.routes - INFO - タッチセンサーが検出されました (API経由)
+news-system_1  | 2025-01-24 02:55:25,397 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:55:25] "POST /api/touch-detected HTTP/1.1" 200 -
+news-system_1  | 2025-01-24 02:55:25,398 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:55:25] "GET /events HTTP/1.1" 200 -
+news-system_1  | 2025-01-24 02:55:31,435 - app.routes - INFO - api_start_voice_input関数が呼び出されました
+news-system_1  | 2025-01-24 02:55:31,436 - app.routes - INFO - 音声認識処理を開始
+news-system_1  | 2025-01-24 02:55:31,437 - app.routes - INFO - 音声録音を開始します（5秒間）
+news-system_1  | Recording WAVE 'temp_audio.wav' : Signed 16 bit Little Endian, Rate 44100 Hz, Mono
+news-system_1  | 2025-01-24 02:55:36,565 - app.routes - INFO - 音声録音が完了しました
+news-system_1  | 2025-01-24 02:55:36,567 - app.routes - INFO - 音声データを読み込み中...
+news-system_1  | 2025-01-24 02:55:36,572 - app.routes - INFO - 音声認識を実行中...
+news-system_1  | 2025-01-24 02:55:38,339 - app.routes - ERROR - 音声認識エラー: 
+news-system_1  | 2025-01-24 02:55:38,342 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:55:38] "POST /api/start-voice-input HTTP/1.1" 200 -
+news-system_1  | 2025-01-24 02:55:50,130 - app.routes - INFO - タッチセンサーが検出されました (API経由)
+news-system_1  | 2025-01-24 02:55:50,133 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:55:50] "POST /api/touch-detected HTTP/1.1" 200 -
+news-system_1  | 2025-01-24 02:55:56,165 - app.routes - INFO - api_start_voice_input関数が呼び出されました
+news-system_1  | 2025-01-24 02:55:56,165 - app.routes - INFO - 音声認識処理を開始
+news-system_1  | 2025-01-24 02:55:56,166 - app.routes - INFO - 音声録音を開始します（5秒間）
+news-system_1  | Recording WAVE 'temp_audio.wav' : Signed 16 bit Little Endian, Rate 44100 Hz, Mono
+news-system_1  | 2025-01-24 02:56:01,205 - app.routes - INFO - 音声録音が完了しました
+news-system_1  | 2025-01-24 02:56:01,207 - app.routes - INFO - 音声データを読み込み中...
+news-system_1  | 2025-01-24 02:56:01,212 - app.routes - INFO - 音声認識を実行中...
+news-system_1  | 2025-01-24 02:56:02,378 - app.routes - ERROR - 音声認識エラー: 
+news-system_1  | 2025-01-24 02:56:02,382 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:56:02] "POST /api/start-voice-input HTTP/1.1" 200 -
+news-system_1  | 2025-01-24 02:56:12,957 - app.routes - INFO - api_start_voice_input関数が呼び出されました
+news-system_1  | 2025-01-24 02:56:12,958 - app.routes - INFO - 音声認識処理を開始
+news-system_1  | 2025-01-24 02:56:12,959 - app.routes - INFO - 音声録音を開始します（5秒間）
+news-system_1  | Recording WAVE 'temp_audio.wav' : Signed 16 bit Little Endian, Rate 44100 Hz, Mono
+news-system_1  | 2025-01-24 02:56:18,038 - app.routes - INFO - 音声録音が完了しました
+news-system_1  | 2025-01-24 02:56:18,040 - app.routes - INFO - 音声データを読み込み中...
+news-system_1  | 2025-01-24 02:56:18,046 - app.routes - INFO - 音声認識を実行中...
+news-system_1  | 2025-01-24 02:56:19,776 - app.routes - ERROR - 音声認識エラー: 
+news-system_1  | 2025-01-24 02:56:19,779 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:56:19] "POST /api/start-voice-input HTTP/1.1" 200 -
+news-system_1  | 2025-01-24 02:56:51,410 - app.routes - INFO - タッチセンサーが検出されました (API経由)
+news-system_1  | 2025-01-24 02:56:51,416 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:56:51] "POST /api/touch-detected HTTP/1.1" 200 -
+news-system_1  | 2025-01-24 02:56:51,960 - app.routes - INFO - タッチセンサーが検出されました (API経由)
+news-system_1  | 2025-01-24 02:56:51,961 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:56:51] "POST /api/touch-detected HTTP/1.1" 200 -
+news-system_1  | 2025-01-24 02:56:57,468 - app.routes - INFO - api_start_voice_input関数が呼び出されました
+news-system_1  | 2025-01-24 02:56:57,469 - app.routes - INFO - 音声認識処理を開始
+news-system_1  | 2025-01-24 02:56:57,470 - app.routes - INFO - 音声録音を開始します（5秒間）
+news-system_1  | Recording WAVE 'temp_audio.wav' : Signed 16 bit Little Endian, Rate 44100 Hz, Mono
+news-system_1  | 2025-01-24 02:56:58,072 - app.routes - INFO - api_start_voice_input関数が呼び出されました
+news-system_1  | 2025-01-24 02:56:58,072 - app.routes - INFO - 音声認識処理を開始
+news-system_1  | 2025-01-24 02:56:58,073 - app.routes - INFO - 音声録音を開始します（5秒間）
+news-system_1  | arecord: main:828: audio open error: Device or resource busy
+news-system_1  | 2025-01-24 02:56:58,101 - app.routes - ERROR - 音声認識エラー: Command '['arecord', '-d', '5', '-f', 'S16_LE', '-c', '1', '-r', '44100', 'temp_audio.wav']' returned non-zero exit status 1.
+news-system_1  | 2025-01-24 02:56:58,104 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:56:58] "POST /api/start-voice-input HTTP/1.1" 200 -
+news-system_1  | 2025-01-24 02:57:01,907 - app.routes - INFO - タッチセンサーが検出されました (API経由)
+news-system_1  | 2025-01-24 02:57:01,909 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:57:01] "POST /api/touch-detected HTTP/1.1" 200 -
+news-system_1  | 2025-01-24 02:57:02,519 - app.routes - INFO - 音声録音が完了しました
+news-system_1  | 2025-01-24 02:57:02,520 - app.routes - ERROR - 音声認識エラー: [Errno 2] No such file or directory: 'temp_audio.wav'
+news-system_1  | 2025-01-24 02:57:02,525 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:57:02] "POST /api/start-voice-input HTTP/1.1" 200 -
+news-system_1  | 2025-01-24 02:57:08,007 - app.routes - INFO - api_start_voice_input関数が呼び出されました
+news-system_1  | 2025-01-24 02:57:08,008 - app.routes - INFO - 音声認識処理を開始
+news-system_1  | 2025-01-24 02:57:08,009 - app.routes - INFO - 音声録音を開始します（5秒間）
+news-system_1  | Recording WAVE 'temp_audio.wav' : Signed 16 bit Little Endian, Rate 44100 Hz, Mono
+news-system_1  | 2025-01-24 02:57:13,070 - app.routes - INFO - 音声録音が完了しました
+news-system_1  | 2025-01-24 02:57:13,071 - app.routes - INFO - 音声データを読み込み中...
+news-system_1  | 2025-01-24 02:57:13,074 - app.routes - INFO - 音声認識を実行中...
+news-system_1  | 2025-01-24 02:57:14,519 - app.routes - ERROR - 音声認識エラー: 
+news-system_1  | 2025-01-24 02:57:14,522 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:57:14] "POST /api/start-voice-input HTTP/1.1" 200 -
+news-system_1  | 2025-01-24 02:57:21,189 - app.routes - INFO - タッチセンサーが検出されました (API経由)
+news-system_1  | 2025-01-24 02:57:21,190 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:57:21] "POST /api/touch-detected HTTP/1.1" 200 -
+news-system_1  | 2025-01-24 02:57:21,654 - app.routes - INFO - タッチセンサーが検出されました (API経由)
+news-system_1  | 2025-01-24 02:57:21,656 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:57:21] "POST /api/touch-detected HTTP/1.1" 200 -
+news-system_1  | 2025-01-24 02:57:27,235 - app.routes - INFO - api_start_voice_input関数が呼び出されました
+news-system_1  | 2025-01-24 02:57:27,235 - app.routes - INFO - 音声認識処理を開始
+news-system_1  | 2025-01-24 02:57:27,236 - app.routes - INFO - 音声録音を開始します（5秒間）
+news-system_1  | Recording WAVE 'temp_audio.wav' : Signed 16 bit Little Endian, Rate 44100 Hz, Mono
+news-system_1  | 2025-01-24 02:57:27,738 - app.routes - INFO - api_start_voice_input関数が呼び出されました
+news-system_1  | 2025-01-24 02:57:27,741 - app.routes - INFO - 音声認識処理を開始
+news-system_1  | 2025-01-24 02:57:27,741 - app.routes - INFO - 音声録音を開始します（5秒間）
+news-system_1  | arecord: main:828: audio open error: Device or resource busy
+news-system_1  | 2025-01-24 02:57:27,786 - app.routes - ERROR - 音声認識エラー: Command '['arecord', '-d', '5', '-f', 'S16_LE', '-c', '1', '-r', '44100', 'temp_audio.wav']' returned non-zero exit status 1.
+news-system_1  | 2025-01-24 02:57:27,790 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:57:27] "POST /api/start-voice-input HTTP/1.1" 200 -
+news-system_1  | 2025-01-24 02:57:32,301 - app.routes - INFO - 音声録音が完了しました
+news-system_1  | 2025-01-24 02:57:32,301 - app.routes - ERROR - 音声認識エラー: [Errno 2] No such file or directory: 'temp_audio.wav'
+news-system_1  | 2025-01-24 02:57:32,303 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2025 02:57:32] "POST /api/start-voice-input HTTP/1.1" 200 -
+
+
