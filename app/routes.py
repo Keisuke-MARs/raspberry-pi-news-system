@@ -313,7 +313,7 @@ def get_news():
         'sortBy': 'publishedAt',  # 公開日時で並び替え
         'apiKey': api_key,
         'domains': 'asahi.com',  # 朝日新聞のドメインを指定
-        'pageSize': 100  # 100件を取得（フィルタリング前）
+        'pageSize': 20  # 20件を取得（フィルタリング前）
     }
 
     try:
